@@ -232,9 +232,8 @@ i=5 │         º       a[2,5]
 
     def calculateTheError(self):
         '''
-        1. Calculates the Neural Network result error using the below function
+        Calculates the Neural Network result error using the below function
 
-        2. Back propagates the obtained error by adding it to every neuron of the array of neuron activation function (self.a)
         '''
         yHat = nn.extendedTrainingValuesMatrix[:, -2]
         y = nn.extendedTrainingValuesMatrix[:, -1]
@@ -260,7 +259,8 @@ i=5 │         º       a[2,5]
 
     def backPropagation(self, epochs):
         '''
-        Obtain the optimal nn.w matrix: the one that causes the lowest error
+        Back propagates the obtained error repeating the training proces during # epochs to obtain the optimal nn.w matrix and
+        replaces nn.w matrix with the values that causes the lowest error
 
         :param epochs: number of training iterations
         '''
