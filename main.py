@@ -233,8 +233,17 @@ i=5 │         º       a[2,5]
     def calculateTheError(self):
         '''
         Calculates the Neural Network result error using the below function
-
+        
+        ÿi ---> obtained result in neuron i
+        yi ---> real result in neuron i
+        
+                    i=#_output_neurons ┌            2 ┐
+        error = SUM                    │  (ÿi - yi)   │
+                                       │ -----------  │
+                    i=1                │      2       │
+                                       └              ┘
         '''
+        
         yHat = nn.extendedTrainingValuesMatrix[:, -2]
         y = nn.extendedTrainingValuesMatrix[:, -1]
         numResults = y.size
