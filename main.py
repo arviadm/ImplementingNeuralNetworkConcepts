@@ -233,17 +233,18 @@ i=5 │         º       a[2,5]
     def calculateTheError(self):
         '''
         Calculates the Neural Network result error using the below function
-        
+
         ÿi ---> obtained result in neuron i
         yi ---> real result in neuron i
-        
+
                     i=#_output_neurons ┌            2 ┐
         error = SUM                    │  (ÿi - yi)   │
                                        │ -----------  │
                     i=1                │      2       │
                                        └              ┘
         '''
-        
+
+
         yHat = nn.extendedTrainingValuesMatrix[:, -2]
         y = nn.extendedTrainingValuesMatrix[:, -1]
         numResults = y.size
@@ -254,7 +255,11 @@ i=5 │         º       a[2,5]
 
     def adjustWeights(self, error):
         '''
-        Applies the error correction to the weights matrix
+        Applies the error correction to the weights' matrix (nn.w) and
+         the activation threshold's matrix (nn.u) in this manner:
+
+        ► if value of cell is less than 0, then we add the error
+        ► if value of cell is greater than 0, then we subtract the error
 
         :param error: correction used to adjust the weights
         '''
@@ -265,6 +270,14 @@ i=5 │         º       a[2,5]
                         nn.w[k][i][j] = nn.w[k][i][j] + error
                     else:
                         nn.w[k][i][j] = nn.w[k][i][j] - error
+
+        for i in range(0, nn.u.shape[0]):
+            for i in range(0, nn.u.shape[1]):
+                if nn.u[i][j] > -10000:
+                    if nn.u[i][j] < 0:
+                        nn.u[i][j] = nn.u[i][j] + error
+                    else:
+                        nn.u[i][j] = nn.u[i][j] - error
 
     def backPropagation(self, epochs):
         '''
@@ -379,4 +392,4 @@ if __name__ == '__main__':
 
     yHat = nn.neuronActivation(x=x)
 
-    print(f'The output of the non-trained Neural Network for x={x} is {yHat}')
+    print(f'The output after having trained the Neural Network for x={x} is {yHat}')
