@@ -1,4 +1,4 @@
-**# Synopsis
+# Synopsis
 
 In this exercise I've tried to implement the formulas explained by [Javier Garcia](https://www.youtube.com/@Javier_Garcia) in his [Redes Neuronales - Fácil y desde cero](https://www.youtube.com/playlist?list=PLAnA8FVrBl8AWkZmbswwWiF8a_52dQ3JQ) series of videos.
 
