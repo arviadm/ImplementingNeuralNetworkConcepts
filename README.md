@@ -34,7 +34,9 @@ Testing inputs when the Neural Network still is not trained:
 
 The output of the non-trained Neural Network for x=[1 4 7] is [ 0. -1.]
 
-TRAINING THE NEURAL NETWORK: Applying the Back Propagation algorithm to the weight matrix and keeps the weights matrix with less errors:
+TRAINING THE NEURAL NETWORK:
+ . Applies the Back Propagation algorithm # epoch times to the weight matrix
+ . Updates  the weights matrix with the one in the #epoch list that obtained less errors
 
 minError=26.874771295543436, epoch=115
 
