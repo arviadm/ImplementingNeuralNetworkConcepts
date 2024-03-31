@@ -105,7 +105,7 @@ def normalizeMatrix(matrix):
     return normalizedMatrix
 
 class NeuralNetwork():
-    def __init__(self, layers):
+    def __init__(self, layers, learningRate):
         # Neural network layers and neurons per layer
         self.layers = layers
         # Path weights
@@ -116,6 +116,8 @@ class NeuralNetwork():
         self.a = numpy.full((max(self.layers), len(self.layers)), 0, dtype=float)
         # Extended training set of the neural network
         self.extendedTrainingValuesMatrix = numpy.array([])
+        # Learning rate (default value is 0)
+        self.learningRate = learningRate
 
     def neuronActivation(self, x):
         """
@@ -274,9 +276,10 @@ i=5 │         º       a[2,5]
         error = 0
         for i in range(0, numResults - 1):
             error = error + (  numpy.float_power((yHat[i] - y[i]), 2) / 2)
-        return error
+        averageError = error / numResults
+        return averageError
 
-    def adjustWeights(self, error):
+    def adjustWeightsAndThresholds(self, error):
         '''
         Applies the error correction to the weights' matrix (nn.w) and
          the activation threshold's matrix (nn.u) in this manner:
@@ -290,9 +293,9 @@ i=5 │         º       a[2,5]
             for i in range(0, len(nn.w[k]) - 1):
                 for j in range(0, len(nn.w[k][i]) - 1):
                     if nn.w[k][i][j] < 0:
-                        nn.w[k][i][j] = nn.w[k][i][j] + error
+                        nn.w[k][i][j] = nn.w[k][i][j] + error + nn.learningRate
                     else:
-                        nn.w[k][i][j] = nn.w[k][i][j] - error
+                        nn.w[k][i][j] = nn.w[k][i][j] - error - nn.learningRate
 
         for i in range(0, nn.u.shape[0]):
             for i in range(0, nn.u.shape[1]):
@@ -314,21 +317,22 @@ i=5 │         º       a[2,5]
         for i in range(0, epochs):
             startTime =  datetime.now()
             # Train the Neural Network
-            nn.buildExtendedTrainNeuralNetwork(trainingValuesMatrix)
+            nn.buildExtendedTrainNeuralNetwork(trainingValuesMatrix=trainingValuesMatrixSubSet)
             error = nn.calculateTheError()
             listErrors.append(error)
             listWeigths.append(nn.w)
-            # print(f'epoch={i}, error={error}')
+            print(f'epoch={i}, error={error}')
             # print(nn.w)
+
             # Adjust the weights with the obtained error
-            nn.adjustWeights(error=error)
+            nn.adjustWeightsAndThresholds(error=error)
 
             # print(f'Epoch {i} took { datetime.now() - startTime} seconds to complete.')
 
         # Update the weights matrix with the values that gives the lowest calculated error
         minError = min(listErrors)
         positionOfMinError = listErrors.index(minError)
-        print(f'minError={minError}, epoch={positionOfMinError}\n')
+        #print(f'minError={minError}, epoch={positionOfMinError}\n')
         # print(f'Optimal weight matrix:\n{listWeigths[positionOfMinError]}')
         nn.w = listWeigths[positionOfMinError]
 
@@ -373,7 +377,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         usage=f'Usage:\n'
               '======\n' +
-              sys.argv[0] + ' -l <layers array> -e <num epochs>'
+              sys.argv[0] + ' -l <layers array> -e <num epochs> -r <learning rate>'
               '\n'
               'Example input:\n'
               '========\n'
@@ -383,16 +387,19 @@ if __name__ == '__main__':
               '                ► second hidden layer with 3 neurons,\n'
               '                ► Output layer with 2 neurons\n'
               ' -e 5       --> means train the neural network 5 times\n'
+              ' -r 0.01    --> means train the neural at a increased learning rate of 0.01\n'
     )
 
     parser.add_argument('-l', '--layers', nargs='+', type=int, required=True, help='Layers')
     parser.add_argument('-e', '--epochs', type=int, required=True, help='Epochs')
+    parser.add_argument('-r', '--learningrate', type=float, default=0, required=False, help='LearningRate')
     args = vars(parser.parse_args())
 
 
     layers = args.get('layers')
     epochs = args.get('epochs')
-    nn = NeuralNetwork(layers=layers)
+    learningRate=args.get('learningrate')
+    nn = NeuralNetwork(layers=layers, learningRate=learningRate)
 
     #########################################################################
     # Testing inputs when the Neural Network still is not trained
@@ -424,7 +431,7 @@ if __name__ == '__main__':
     # Reading the training values from a text file
     #########################################################################
     listOfDatasetRows = []
-    with open('dataset.txt') as f:
+    with open('resources/dataset.txt') as f:
         for line in f:
             partialList = []
             for i in line.rstrip().split(';'):
@@ -440,11 +447,13 @@ if __name__ == '__main__':
     trainingValuesMatrix, testingValuesMatrix = splitDataset(datasetMatrix=datasetMatrix, percentForTraining=80)
 
     ############################################################################################################
-    # TRAINING THE NEURAL NETWORK: Applying the Back Propagation algorithm to the weights matrix and keeps the
-    # weights' matrix with less errors
+    # TRAINING THE NEURAL NETWORK: Applying the Back Propagation algorithm to the weights matrix; updates the
+    # Neural Network's weights matrix with the matrix that obtained less errors
     ############################################################################################################
     print('')
-    print('TRAINING THE NEURAL NETWORK: Applying the Back Propagation algorithm to the weight matrix and keeps the weights matrix with less errors:')
+    print('TRAINING THE NEURAL NETWORK: \n'
+          ' . Applies the Back Propagation algorithm # epoch times to the weight matrix\n'
+          ' . Updates  the weights matrix with the one in the #epoch list that obtained less errors\n')
     startTime = datetime.now()
     nn.backPropagation(epochs, trainingValuesMatrixSubSet=trainingValuesMatrix)
     print('')
