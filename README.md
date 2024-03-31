@@ -1,4 +1,4 @@
-# Synopsis
+**# Synopsis
 
 In this exercise I've tried to implement the formulas explained by [Javier Garcia](https://www.youtube.com/@Javier_Garcia) in his [Redes Neuronales - Fácil y desde cero](https://www.youtube.com/playlist?list=PLAnA8FVrBl8AWkZmbswwWiF8a_52dQ3JQ) series of videos.
 
@@ -32,12 +32,16 @@ python.exe main.py -l 3 4 4 2 -e 5000
 
 Testing inputs when the Neural Network still is not trained:
 
-The output of the non-trained Neural Network for x=[-1.  -0.5  0. ] is [-0.40935189 -0.15996135]
+The output of the non-trained Neural Network for x=[1 4 7] is [ 0. -1.]
 
-Applying the Back Propagation algorithm to the weight matrix and keeps the weights matrix with less errors:
+TRAINING THE NEURAL NETWORK: Applying the Back Propagation algorithm to the weight matrix and keeps the weights matrix with less errors:
 
-minError=0.026388417826122883, epoch=6
+minError=26.874771295543436, epoch=115
 
-The output of the non-trained Neural Network for x=[-1.  -0.5  0. ] is [0.84984607 1.04056515]
+
+Neural network trained!!!. It took 0:01:20.394639 seconds to train it.
+
+Training the Neural Network with 1000 epoch gave a 59.41% of successful predictions with the test dataset
+
+The output after having trained the Neural Network for x=[ 5 14  3] is [ 0. -1.]
 ```
-
