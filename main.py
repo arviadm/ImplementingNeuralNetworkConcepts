@@ -1,13 +1,16 @@
 import argparse
+import math
 import random
 import sys
+from datetime import time, datetime
+
 import numpy
 
 
 def initializeWeights(layers):
     """
     Initializes a set of 2 dimensional arrays with values between 0 and 1 representing weights connecting neurons of two
-    consecutive layers, and rest of cells with value -10000 representing they aren't used
+    consecutive layers, and rest of cells with value 0 representing they aren't used
     The number of arrays will be (len(layers) - 1) / 2
     The dimension of each layer will be (layer[i] x layer[i + 1]), being i from 0 to len(layers) -1
 
@@ -28,7 +31,7 @@ def initializeWeights(layers):
     """
     w = []
     for k in range(0, len(layers) - 1):
-        wpartial = numpy.full((layers[k+1], layers[k]), -10000, dtype=float)
+        wpartial = numpy.full((layers[k+1], layers[k]), 0, dtype=float)
         for i in range(0, layers[k]):
             for j in range(0, layers[k + 1]):
                 wpartial[j][i] = random.random()
@@ -39,7 +42,7 @@ def initializeWeights(layers):
 def initializeActivationThreshold(layers):
     """
     Initializes a 2 dimensional array with values between 0 and 1 representing activation thresholds for each neuron,
-    and rest of cells with value -10000 representing they aren't used
+    and rest of cells with value 0 representing they aren't used
     The dimension of the array will be of [len(layers) + max(layers) - 1]
 
      layers[3, 4, 5, 1]
@@ -58,7 +61,7 @@ def initializeActivationThreshold(layers):
 
     :return: initialized activation threshold array
     """
-    u = numpy.full((max(layers), len(layers)), -10000, dtype=float)
+    u = numpy.full((max(layers), len(layers)), 0, dtype=float)
     for i in range(0, len(layers)):
         for j in range(0, layers[i]):
             u[j][i] = random.random()
@@ -82,7 +85,7 @@ def normalizeMatrix(matrix):
         minTrainingValue = matrix.min()
         for x in range(0, matrix.shape[0]):
             actualCellValue = matrix[x]
-            if actualCellValue.__eq__(-10000):
+            if actualCellValue.__eq__(0):
                 normalizedMatrix[x] = 0
             else:
                 normalizedMatrix[x] = (actualCellValue - maxTrainingValue) / \
@@ -94,7 +97,7 @@ def normalizeMatrix(matrix):
         for x in range(0, matrix.shape[0]):
             for y in range(0, matrix.shape[1]):
                 actualCellValue = matrix[x][y]
-                if actualCellValue.__eq__(-10000):
+                if actualCellValue.__eq__(0):
                    normalizedMatrix[x] = 0
                 else:
                    normalizedMatrix[x][y] = (actualCellValue - maxTrainingValue) / \
@@ -110,7 +113,7 @@ class NeuralNetwork():
         # Activation threshold
         self.u = initializeActivationThreshold(layers)
         # Array of activation function per neuron
-        self.a = numpy.full((max(self.layers), len(self.layers)), -10000, dtype=float)
+        self.a = numpy.full((max(self.layers), len(self.layers)), 0, dtype=float)
         # Extended training set of the neural network
         self.extendedTrainingValuesMatrix = numpy.array([])
 
@@ -121,7 +124,7 @@ class NeuralNetwork():
         :initializes: self.a, 2 dimensional array where each cell is the result of applying the neuron activation function
 
     Initializes a 2 dimensional array with values obtained by the function that calculates the output of a neuron
-    Array positions not corresponding to a neuron are set to -10000 value
+    Array positions not corresponding to a neuron are set to 0 value
 
       layers[3, 4, 5, 1]
 
@@ -147,7 +150,7 @@ i=5 │         º       a[2,5]
          1
         a = x
          i   i
-         
+
       If k > 1:
       =========
                ┌                                            ┐
@@ -161,7 +164,7 @@ i=5 │         º       a[2,5]
       ===============================
 
         len(layer)
-       a           = y  
+       a           = y
         i              i
         """
 
@@ -187,7 +190,11 @@ i=5 │         º       a[2,5]
                 for i in range(0, self.layers[k]):
                     sum = 0
                     for j in range(0, self.layers[k-1]):
-                       sum = sum + (self.a[j][k-1] * self.w[k-1][i][j])
+                        if (numpy.isinf(self.a[j][k-1]) | numpy.isnan(self.a[j][k-1])):
+                            print(f'fail catched at self.a[j={j}][k={k}-1]={self.a[j][k-1]}')
+                            return numpy.array([])
+                        else:
+                            sum = sum + (self.a[j][k-1] * self.w[k-1][i][j])
                     self.a[i][k] = self.u[i][k] + sum
             # If k is maximum index of layer:
             # ===============================
@@ -202,7 +209,7 @@ i=5 │         º       a[2,5]
                         sum = sum + (self.a[j][k - 1] * self.w[k - 1][j][i])
                     self.a[i][k] = self.u[i][k] + sum
 
-        # self.a = self.a - error
+        self.a = normalizeMatrix(self.a)
 
         # Get latest layer
         y = self.a[:, -1]
@@ -217,6 +224,22 @@ i=5 │         º       a[2,5]
         Fills the self.extendedTrainingValuesMatrix matrix with the values to train the Neural Network
           plus the yHat results obtainded applying  nn.neuronActivation(x=trainingSet) to every row of the
           trainingValuesMatrix parameter
+
+        i.e, this
+
+         x1  x2  x3 │ y1  y2
+         ───────────┼────────
+          1   2  3  │ 4   3
+          4   5  6  │ 2   1
+         23   1  5  │ 7   4
+
+        will be transformed to this:
+
+         x1  x2  x3 │ y1  y2 │  yHat1   yHat2
+         ───────────┼────────┼──────────────────
+          1   2  3  │ 4   3  │  -2.44     7.50
+          4   5  6  │ 2   1  │   7.26    15.12
+         23   1  5  │ 7   4  │  25.51    28.40
 
         :param trainingValuesMatrix: Matrix of values to train the Neural Network
         '''
@@ -273,13 +296,12 @@ i=5 │         º       a[2,5]
 
         for i in range(0, nn.u.shape[0]):
             for i in range(0, nn.u.shape[1]):
-                if nn.u[i][j] > -10000:
-                    if nn.u[i][j] < 0:
-                        nn.u[i][j] = nn.u[i][j] + error
-                    else:
-                        nn.u[i][j] = nn.u[i][j] - error
+                if nn.u[i][j] < 0:
+                    nn.u[i][j] = nn.u[i][j] + error
+                else:
+                    nn.u[i][j] = nn.u[i][j] - error
 
-    def backPropagation(self, epochs):
+    def backPropagation(self, epochs, trainingValuesMatrixSubSet):
         '''
         Back propagates the obtained error repeating the training proces during # epochs to obtain the optimal nn.w matrix and
         replaces nn.w matrix with the values that causes the lowest error
@@ -290,6 +312,9 @@ i=5 │         º       a[2,5]
         listWeigths = []
         print()
         for i in range(0, epochs):
+            startTime =  datetime.now()
+            # Train the Neural Network
+            nn.buildExtendedTrainNeuralNetwork(trainingValuesMatrix)
             error = nn.calculateTheError()
             listErrors.append(error)
             listWeigths.append(nn.w)
@@ -297,8 +322,9 @@ i=5 │         º       a[2,5]
             # print(nn.w)
             # Adjust the weights with the obtained error
             nn.adjustWeights(error=error)
-            # And train the network once again
-            nn.buildExtendedTrainNeuralNetwork(trainingValuesMatrix)
+
+            # print(f'Epoch {i} took { datetime.now() - startTime} seconds to complete.')
+
         # Update the weights matrix with the values that gives the lowest calculated error
         minError = min(listErrors)
         positionOfMinError = listErrors.index(minError)
@@ -306,8 +332,44 @@ i=5 │         º       a[2,5]
         # print(f'Optimal weight matrix:\n{listWeigths[positionOfMinError]}')
         nn.w = listWeigths[positionOfMinError]
 
+def splitDataset(datasetMatrix, percentForTraining):
+    '''
+    Splits the dataset matrix in percent of rows for training and 1 - percent of rows for testing
+
+    :param datasetMatrix: dataset matrix
+    :param percentForTraining: percent of dataset for training
+    :return: dataset for training, dataset for testing
+    '''
+    splittingRow = round(percentForTraining * datasetMatrix.shape[0] / 100)
+    toTest = datasetMatrix[splittingRow:]
+    toTrain = datasetMatrix[:splittingRow]
+    return toTrain, toTest
+
+def discretizeMatrix(m):
+    for i in range(0, m.size):
+        m[i] = int(m[i])
+    return m
+
 # Press the green button in the gutter to run the script.
+def validateTheTrainedNeuralNetworkUsingTheTestSubset(testDataset):
+    numSuccessfulPredictions = 0
+
+    for testRow in testDataset:
+        # Take the columns equivalent to the number of input values (# of x)
+        x = testRow[:layers[0]]
+        # Take the columns equivalent to the known output values  (# of y)
+        y = discretizeMatrix(m=testRow[layers[0]:])
+        # Calculate the outputs of the test row using the trained Neural Network
+        yHat = nn.neuronActivation(x=x)
+
+        yHat = discretizeMatrix(m=yHat)
+
+        numSuccessfulPredictions = numSuccessfulPredictions + min(yHat.__eq__(y))
+
+    return round(numSuccessfulPredictions * 100 / testingValuesMatrix.shape[0], 2)
+
 if __name__ == '__main__':
+
     parser = argparse.ArgumentParser(
         usage=f'Usage:\n'
               '======\n' +
@@ -339,9 +401,9 @@ if __name__ == '__main__':
     print('')
     print('Testing inputs when the Neural Network still is not trained:\n')
     # Values passed by the user to the neuron activation function
-    x = normalizeMatrix(numpy.array([1, 4, 7]))
+    x = numpy.array([1, 4, 7])
 
-    yHat = nn.neuronActivation(x=x)
+    yHat = normalizeMatrix(nn.neuronActivation(x=normalizeMatrix(x)))
 
     print(f'The output of the non-trained Neural Network for x={x} is {yHat}')
 
@@ -357,39 +419,52 @@ if __name__ == '__main__':
       4   5  6  │ 2   1
      23   1  5  │ 7   4
     '''
-    listOfTrainingValues = []
-    listOfTrainingValues.append([1, 2, 3, 4, 3])
-    listOfTrainingValues.append([4, 5, 6, 2, 1])
-    listOfTrainingValues.append([23, 1, 5, 7, 4])
-    trainingValuesMatrix = normalizeMatrix(numpy.array(listOfTrainingValues))
+
+    #########################################################################
+    # Reading the training values from a text file
+    #########################################################################
+    listOfDatasetRows = []
+    with open('resources/dataset.txt') as f:
+        for line in f:
+            partialList = []
+            for i in line.rstrip().split(';'):
+                partialList.append(int(i))
+            listOfDatasetRows.append(partialList)
+    datasetMatrix = normalizeMatrix(numpy.array(listOfDatasetRows))
+
     # print(f'Matrix of values that we will use to train the Neural Network:\n{trainingValuesMatrix}\n')
 
-    # Enrich the initial matrix of training values with the calculated yHat results
-    '''
-     x1  x2  x3 │ y1  y2 │  yHat1   yHat2
-     ───────────┼────────┼──────────────────
-      1   2  3  │ 4   3  │  -2.44     7.50
-      4   5  6  │ 2   1  │   7.26    15.12
-     23   1  5  │ 7   4  │  25.51    28.40
-    '''
-    nn.buildExtendedTrainNeuralNetwork(trainingValuesMatrix=trainingValuesMatrix)
-    # print(f'Matrix of values to train the Neural Network including a column with calculated yHat results:\n'
-    #       f'{nn.extendedTrainingValuesMatrix}\n')
+    ############################################################################################################
+    # Splitting the dataset into training values and validation values
+    ############################################################################################################
+    trainingValuesMatrix, testingValuesMatrix = splitDataset(datasetMatrix=datasetMatrix, percentForTraining=80)
 
     ############################################################################################################
-    # Applying the Back Propagation algorithm to the weight matrix and keeps the weights matrix with less errors
+    # TRAINING THE NEURAL NETWORK: Applying the Back Propagation algorithm to the weights matrix and keeps the
+    # weights' matrix with less errors
     ############################################################################################################
     print('')
-    print('Applying the Back Propagation algorithm to the weight matrix and keeps the weights matrix with less errors:')
-    nn.backPropagation(epochs)
+    print('TRAINING THE NEURAL NETWORK: Applying the Back Propagation algorithm to the weight matrix and keeps the weights matrix with less errors:')
+    startTime = datetime.now()
+    nn.backPropagation(epochs, trainingValuesMatrixSubSet=trainingValuesMatrix)
+    print('')
+    print(f'Neural network trained!!!. It took {datetime.now() - startTime} seconds to train it.')
 
-    #########################################################################
-    # Testing inputs after the Neural Network has been trained
-    #########################################################################
+    ###########################################################################################################
+    # Get the percentage of successful predictions that the trained Neural Network obtains with the test subset
+    ###########################################################################################################
+    successPercent = validateTheTrainedNeuralNetworkUsingTheTestSubset(testDataset=testingValuesMatrix)
+    print()
+    print(f'Training the Neural Network with {epochs} epoch gave a {successPercent}% of successful predictions with the test dataset')
+    print()
+
+    ##############################################################################
+    # Testing inputs with unknown values after the Neural Network has been trained
+    ##############################################################################
 
     # Values passed by the user to the neuron activation function
-    x = normalizeMatrix(numpy.array([1, 4, 7]))
+    x = numpy.array([5, 14, 3])
 
-    yHat = nn.neuronActivation(x=x)
+    yHat = normalizeMatrix(nn.neuronActivation(x=normalizeMatrix(x)))
 
     print(f'The output after having trained the Neural Network for x={x} is {yHat}')
