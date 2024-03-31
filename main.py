@@ -424,7 +424,7 @@ if __name__ == '__main__':
     # Reading the training values from a text file
     #########################################################################
     listOfDatasetRows = []
-    with open('resources/dataset.txt') as f:
+    with open('dataset.txt') as f:
         for line in f:
             partialList = []
             for i in line.rstrip().split(';'):
